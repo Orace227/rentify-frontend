@@ -32,6 +32,7 @@ import {
 } from '@tabler/icons-react';
 import { Button, Fab } from '@mui/material';
 import Link from 'next/link';
+import EditProduct from '@/app/(DashboardLayout)/(pages)/products/EditProduct';
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -221,6 +222,7 @@ const ProductTableList = () => {
 
   const [rows, setRows] = React.useState(getProducts);
   const [search, setSearch] = React.useState('');
+  const [editRow, setEditRow] = React.useState({});
   const [showEditForm, setShowEditForm] = React.useState(false);
 
   React.useEffect(() => {
@@ -294,9 +296,7 @@ const ProductTableList = () => {
   return (
     <Box>
       {showEditForm && (
-        <Button size="small" onClick={() => setShowEditForm(false)}>
-          <IconEdit size="1.1rem" />
-        </Button>
+        <EditProduct row={editRow} showEditForm={showEditForm} setShowEditForm={setShowEditForm} />
       )}
       <Box>
         <EnhancedTableToolbar
@@ -398,7 +398,13 @@ const ProductTableList = () => {
                         </TableCell>
                         <TableCell>
                           <Tooltip title="Edit">
-                            <Button size="small" onClick={() => setShowEditForm(true)}>
+                            <Button
+                              size="small"
+                              onClick={() => {
+                                setShowEditForm(true);
+                                setEditRow(row);
+                              }}
+                            >
                               <IconEdit size="1.1rem" />
                             </Button>
                           </Tooltip>
