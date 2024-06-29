@@ -23,6 +23,7 @@ import axios from 'axios';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
+import { InsertInvitation } from '@mui/icons-material';
 
 const availabilityStatuses = [
   {
@@ -161,16 +162,6 @@ const FurnitureCategories = [
   },
 ];
 
-const initialValues = {
-  productName: '',
-  productDescription: '',
-  rentalPrice: '',
-  availabilityStatus: '',
-  rentalStartDate: moment(),
-  rentalEndDate: moment(),
-  category: '',
-};
-
 const categorySchema = Yup.object({
   label: Yup.string().required('Label is Required'),
   value: Yup.string().required('Value is Required'),
@@ -181,8 +172,8 @@ const availabilityStatusSchema = Yup.object({
 });
 
 const validationSchema = Yup.object({
-  productName: Yup.string().required('Product name is Required'),
-  productDescription: Yup.string().required('Product description is Required'),
+  name: Yup.string().required('Product name is Required'),
+  description: Yup.string().required('Product description is Required'),
   category: categorySchema,
   rentalPrice: Yup.string().required('Rental Price is Required'),
   availabilityStatus: availabilityStatusSchema,
@@ -198,6 +189,15 @@ const AddProductForm = ({ row, showEditForm, setShowEditForm }) => {
   const theme = useTheme();
   const [images, setImages] = useState([]);
 
+  const initialValues = {
+    name: row.name,
+    description: row.description,
+    rentalPrice: row.rentalPrice,
+    availabilityStatus: row.availabilityStatus,
+    rentalStartDate: moment(),
+    rentalEndDate: moment(),
+    category: row.category,
+  };
   const reactSelectStyles = {
     control: (provided) => ({
       ...provided,
@@ -265,14 +265,12 @@ const AddProductForm = ({ row, showEditForm, setShowEditForm }) => {
   };
 
   const handleSubmit = async (values) => {
-    values.category = values.category.value;
-    values.availabilityStatus = values.availabilityStatus.value;
     console.log(values);
-    if (!images) {
+    if (images.length === 0) {
       console.log('no image provided');
       try {
-        const createdProduct = await axios.post('/createProduct', values);
-        console.log(createdProduct);
+        const updateProduct = await axios.post('/serviceProvider/updateFurniture', values);
+        console.log(updateProduct);
       } catch (error) {
         console.error('Error:', error);
       }
@@ -282,7 +280,7 @@ const AddProductForm = ({ row, showEditForm, setShowEditForm }) => {
         formData.append('images', images);
         const imageUrls = await uploadImage(formData);
         values.imageUrls = imageUrls;
-        const createdProduct = await axios.post('/createProduct', values);
+        const createdProduct = await axios.post('/serviceProvider/updateFurniture', values);
         console.log(createdProduct);
       } catch (error) {
         console.error('Error:', error);
@@ -300,7 +298,7 @@ const AddProductForm = ({ row, showEditForm, setShowEditForm }) => {
         <div className="mx-5 my-3">
           <DialogContent>
             <Formik
-              initialValues={row}
+              initialValues={initialValues}
               validationSchema={validationSchema}
               onSubmit={(values) => handleSubmit(values)}
             >
@@ -309,12 +307,12 @@ const AddProductForm = ({ row, showEditForm, setShowEditForm }) => {
                   <Grid container spacing={3}>
                     <Grid item xs={12} sm={6}>
                       <Box>
-                        <CustomFormLabel htmlFor="productName">
+                        <CustomFormLabel htmlFor="name">
                           Product Name{<CustomStar />}
                         </CustomFormLabel>
                         <Field
-                          id="productName"
-                          name="productName"
+                          id="name"
+                          name="name"
                           type="text"
                           placeholder="Enter Product Name"
                           as={CustomTextField}
@@ -329,18 +327,18 @@ const AddProductForm = ({ row, showEditForm, setShowEditForm }) => {
                             color: 'primary.main',
                           }}
                         >
-                          <ErrorMessage name="productName" />
+                          <ErrorMessage name="name" />
                         </Typography>
                       </Box>
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <Box>
-                        <CustomFormLabel htmlFor="productDescription">
+                        <CustomFormLabel htmlFor="description">
                           Product Description {<CustomStar />}
                         </CustomFormLabel>
                         <Field
-                          id="productDescription"
-                          name="productDescription"
+                          id="description"
+                          name="description"
                           type="text"
                           placeholder="Enter Product Description"
                           as={CustomTextField}
@@ -354,7 +352,7 @@ const AddProductForm = ({ row, showEditForm, setShowEditForm }) => {
                             color: 'primary.main',
                           }}
                         >
-                          <ErrorMessage name="productDescription" />
+                          <ErrorMessage name="description" />
                         </Typography>
                       </Box>
                     </Grid>
@@ -602,7 +600,7 @@ const AddProductForm = ({ row, showEditForm, setShowEditForm }) => {
                         type="submit"
                         disabled={isSubmitting}
                       >
-                        {isSubmitting ? 'Submitting...' : 'Add Product'}
+                        {isSubmitting ? 'Submitting...' : 'Edit Product'}
                       </Button>
                     </Box>
                   </DialogActions>

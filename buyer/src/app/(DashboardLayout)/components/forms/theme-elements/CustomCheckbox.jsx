@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { styled }  from "@mui/system";
+import { styled } from '@mui/system';
 import Checkbox from '@mui/material/Checkbox';
 
 const BpIcon = styled('span')(({ theme }) => ({

@@ -19,11 +19,14 @@ import Head from 'next/head';
 import { SessionProvider } from 'next-auth/react';
 import './global.css';
 import { SellerProvider } from './hooks/useSeller';
+import axios from 'axios';
 export const MyApp = ({ children }) => {
   const theme = ThemeSettings();
 
   const customizer = useSelector((state) => state.customizer);
 
+  axios.defaults.baseURL = 'http://localhost:8000/api/v1';
+  axios.defaults.withCredentials = true;
   return (
     <>
       <NextAppDirEmotionCacheProvider options={{ key: 'modernize' }}>

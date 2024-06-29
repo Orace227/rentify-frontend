@@ -17,9 +17,4 @@ const ChildCard = ({ title, children }) => (
   </Card>
 );
 
-ChildCard.propTypes = {
-  title: PropTypes.string.isRequired,
-  children: PropTypes.node,
-};
-
 export default ChildCard;

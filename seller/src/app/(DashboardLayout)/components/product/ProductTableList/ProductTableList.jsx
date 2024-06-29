@@ -33,6 +33,8 @@ import {
 import { Button, Fab } from '@mui/material';
 import Link from 'next/link';
 import EditProduct from '@/app/(DashboardLayout)/(pages)/products/EditProduct';
+import { setProducts } from '@/store/reducers/products/ProductsSlice';
+import axios from 'axios';
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -73,12 +75,18 @@ const headCells = [
     label: 'Products',
   },
   {
-    id: 'pname',
+    id: 'desc',
     numeric: false,
     disablePadding: false,
-    label: 'Date',
+    label: 'Description',
   },
 
+  {
+    id: 'price',
+    numeric: false,
+    disablePadding: false,
+    label: 'Price',
+  },
   {
     id: 'status',
     numeric: false,
@@ -86,10 +94,10 @@ const headCells = [
     label: 'Status',
   },
   {
-    id: 'price',
+    id: 'date',
     numeric: false,
     disablePadding: false,
-    label: 'Price',
+    label: 'Date',
   },
   {
     id: 'action',
@@ -145,8 +153,20 @@ function EnhancedTableHead(props) {
 }
 
 const EnhancedTableToolbar = (props) => {
-  const { numSelected, handleSearch, search } = props;
+  const { numSelected, rows, handleSearch, search } = props;
 
+  const handleDeleteProducts = async () => {
+    try {
+      console.log(rows);
+      const body = {
+        furnitureItemIds: rows,
+      };
+      const deleteProducts = await axios.post('/serviceProvider/deleteFurniture', body);
+      console.log(deleteProducts);
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <Toolbar
       sx={{
@@ -182,7 +202,7 @@ const EnhancedTableToolbar = (props) => {
 
       {numSelected > 0 ? (
         <Tooltip title="Delete">
-          <IconButton>
+          <IconButton onClick={handleDeleteProducts}>
             <IconTrash width="18" />
           </IconButton>
         </Tooltip>
@@ -211,9 +231,12 @@ const ProductTableList = () => {
   const dispatch = useDispatch();
 
   React.useEffect(() => {
-    const fetchProducts = () => {
-      console.log('fetching...');
-      // dispatch(setProducts(products)); // store products in to product variable and pass it in it to show
+    const fetchProducts = async () => {
+      const fetchProducts = await axios.post('/serviceProvider/fetchFurniture');
+      console.log(fetchProducts);
+      if ((fetchProducts.status = 200)) {
+        dispatch(setProducts(fetchProducts.data)); // store products in to product variable and pass it in it to show
+      }
     };
     fetchProducts();
   }, []);
@@ -231,7 +254,7 @@ const ProductTableList = () => {
 
   const handleSearch = (event) => {
     const filteredRows = getProducts.filter((row) => {
-      return row.title.toLowerCase().includes(event.target.value);
+      return row.name.toLowerCase().includes(event.target.value);
     });
     setSearch(event.target.value);
     setRows(filteredRows);
@@ -247,7 +270,7 @@ const ProductTableList = () => {
   // This is for select all the row
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      const newSelecteds = rows.map((n) => n.title);
+      const newSelecteds = rows.map((n) => n.name);
       setSelected(newSelecteds);
 
       return;
@@ -255,13 +278,13 @@ const ProductTableList = () => {
     setSelected([]);
   };
 
-  // This is for the single row sleect
-  const handleClick = (event, name) => {
-    const selectedIndex = selected.indexOf(name);
+  // This is for the single row select
+  const handleClick = (event, furnitureId) => {
+    const selectedIndex = selected.indexOf(furnitureId);
     let newSelected = [];
 
     if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, name);
+      newSelected = newSelected.concat(selected, furnitureId);
     } else if (selectedIndex === 0) {
       newSelected = newSelected.concat(selected.slice(1));
     } else if (selectedIndex === selected.length - 1) {
@@ -272,7 +295,7 @@ const ProductTableList = () => {
         selected.slice(selectedIndex + 1),
       );
     }
-
+    console.log('newSelected', newSelected);
     setSelected(newSelected);
   };
 
@@ -301,6 +324,7 @@ const ProductTableList = () => {
       <Box>
         <EnhancedTableToolbar
           numSelected={selected.length}
+          rows={selected}
           search={search}
           handleSearch={(event) => handleSearch(event)}
         />
@@ -323,17 +347,17 @@ const ProductTableList = () => {
                 {stableSort(rows, getComparator(order, orderBy))
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((row, index) => {
-                    const isItemSelected = isSelected(row.title);
+                    const isItemSelected = isSelected(row.furnitureId);
                     const labelId = `enhanced-table-checkbox-${index}`;
 
                     return (
                       <TableRow
                         hover
-                        onClick={(event) => handleClick(event, row.title)}
+                        onClick={(event) => handleClick(event, row.furnitureId)}
                         role="checkbox"
                         aria-checked={isItemSelected}
                         tabIndex={-1}
-                        key={row.title}
+                        key={row.name}
                         selected={isItemSelected}
                       >
                         <TableCell padding="checkbox">
@@ -348,32 +372,42 @@ const ProductTableList = () => {
 
                         <TableCell>
                           <Box display="flex" alignItems="center">
-                            <Avatar src={row.photo} alt="product" sx={{ width: 56, height: 56 }} />
                             <Box
                               sx={{
                                 ml: 2,
                               }}
                             >
                               <Typography variant="h6" fontWeight="600">
-                                {row.title}
+                                {row?.name}
                               </Typography>
                               <Typography color="textSecondary" variant="subtitle2">
-                                {row.category}
+                                {row?.category?.label}
                               </Typography>
                             </Box>
                           </Box>
                         </TableCell>
+
                         <TableCell>
-                          <Typography>{format(new Date(row.created), 'E, MMM d yyyy')}</Typography>
+                          <Box>
+                            <Typography variant="h6" fontWeight="600">
+                              {row?.description}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Typography fontWeight={600} variant="h6">
+                            ₹ {row.rentalPrice}
+                          </Typography>
                         </TableCell>
 
                         <TableCell>
                           <Box display="flex" alignItems="center">
                             <Box
                               sx={{
-                                backgroundColor: row.stock
-                                  ? (theme) => theme.palette.success.main
-                                  : (theme) => theme.palette.error.main,
+                                backgroundColor:
+                                  row.availabilityStatus?.value == 'available'
+                                    ? (theme) => theme.palette.success.main
+                                    : (theme) => theme.palette.error.main,
                                 borderRadius: '100%',
                                 height: '10px',
                                 width: '10px',
@@ -386,16 +420,19 @@ const ProductTableList = () => {
                                 ml: 1,
                               }}
                             >
-                              {row.stock ? 'InStock' : 'Out of Stock'}
+                              {row.availabilityStatus?.value == 'available' ? 'Available' : 'Rented'}
                             </Typography>
                           </Box>
                         </TableCell>
 
                         <TableCell>
-                          <Typography fontWeight={600} variant="h6">
-                            ${row.price}
+                          <Typography>
+                            {row?.createdAt
+                              ? format(new Date(row.createdAt), 'E, MMM d yyyy')
+                              : 'Invalid date'}
                           </Typography>
                         </TableCell>
+
                         <TableCell>
                           <Tooltip title="Edit">
                             <Button
@@ -412,6 +449,22 @@ const ProductTableList = () => {
                       </TableRow>
                     );
                   })}
+
+                {rows.length <= 0 && (
+                  <TableRow>
+                    <TableCell>
+                      <Typography
+                        display={'flex'}
+                        justifyItems={'center'}
+                        justifyContent="center"
+                        fontWeight={600}
+                        variant="h6"
+                      >
+                        Products are not available
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
                 {emptyRows > 0 && (
                   <TableRow
                     style={{

@@ -11,28 +11,34 @@ import { Provider } from 'react-redux';
 
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
+import 'tailwindcss/tailwind.css';
 
 import '@/utils/i18n';
 import { NextAppDirEmotionCacheProvider } from '@/utils/theme/EmotionCache';
 import Head from 'next/head';
 import { SessionProvider } from 'next-auth/react';
-
+import './global.css';
+import { SellerProvider } from './hooks/useSeller';
+import axios from 'axios';
 export const MyApp = ({ children }) => {
   const theme = ThemeSettings();
 
   const customizer = useSelector((state) => state.customizer);
-
+  axios.defaults.baseURL = 'http://localhost:8000/api/v1';
+  axios.defaults.withCredentials = true;
   return (
     <>
       <NextAppDirEmotionCacheProvider options={{ key: 'modernize' }}>
         <SessionProvider>
-          <ThemeProvider theme={theme}>
-            <RTL direction={customizer.activeDir}>
-              {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
-              <CssBaseline />
-              {children}
-            </RTL>
-          </ThemeProvider>
+          <SellerProvider>
+            <ThemeProvider theme={theme}>
+              <RTL direction={customizer.activeDir}>
+                {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
+                <CssBaseline />
+                {children}
+              </RTL>
+            </ThemeProvider>
+          </SellerProvider>
         </SessionProvider>
       </NextAppDirEmotionCacheProvider>
     </>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Button, Grid, Alert, DialogActions, Typography } from '@mui/material';
 import CustomTextField from '../theme-elements/CustomTextField';
 import CustomFormLabel from '../theme-elements/CustomFormLabel';
@@ -19,6 +19,8 @@ import { styled } from '@mui/material/styles';
 import Image from 'next/image';
 import { IconPlus, IconX } from '@tabler/icons-react';
 import axios from 'axios';
+import UpdateLocation from './UpdateLocation';
+import { useRouter } from 'next/navigation';
 
 const availabilityStatuses = [
   {
@@ -158,7 +160,7 @@ const FurnitureCategories = [
 ];
 
 const initialValues = {
-  productName: '',
+  name: '',
   productDescription: '',
   rentalPrice: '',
   availabilityStatus: '',
@@ -177,8 +179,8 @@ const availabilityStatusSchema = Yup.object({
 });
 
 const validationSchema = Yup.object({
-  productName: Yup.string().required('Product name is Required'),
-  productDescription: Yup.string().required('Product description is Required'),
+  name: Yup.string().required('Product name is Required'),
+  description: Yup.string().required('Product description is Required'),
   category: categorySchema,
   rentalPrice: Yup.string().required('Rental Price is Required'),
   availabilityStatus: availabilityStatusSchema,
@@ -193,7 +195,8 @@ const validationSchema = Yup.object({
 const AddProductForm = () => {
   const theme = useTheme();
   const [images, setImages] = useState([]);
-
+  const [coordinates, setCoordinates] = useState({});
+  const router = useRouter();
   const reactSelectStyles = {
     control: (provided) => ({
       ...provided,
@@ -252,34 +255,46 @@ const AddProductForm = () => {
 
   const uploadImage = async (formData) => {
     try {
-      const uploadedImages = await axios.post('/uploadImage', formData);
+      const uploadedImages = await axios.post(
+        '/serviceProvider/upload-serviceProvider-product-img',
+        formData,
+      );
       console.log(uploadedImages);
-      return uploadedImages.data.urls;
+      return uploadedImages.data.path;
     } catch (error) {
       console.log('error in uploading image', error);
     }
   };
 
   const handleSubmit = async (values) => {
-    values.category = values.category.value;
-    values.availabilityStatus = values.availabilityStatus.value;
+    values.productLocation = {
+      type: 'Point',
+      coordinates: [coordinates.lng, coordinates.lat],
+    };
     console.log(values);
-    if (!images) {
+    console.log(images.length);
+    if (images.length === 0) {
       console.log('no image provided');
       try {
-        const createdProduct = await axios.post('/createProduct', values);
+        const createdProduct = await axios.post('/serviceProvider/createProduct', values);
         console.log(createdProduct);
+        if ((createdProduct.status = 200)) {
+          router.push('/products');
+        }
       } catch (error) {
         console.error('Error:', error);
       }
     } else {
       try {
         const formData = new FormData();
-        formData.append('images', images);
+        formData.append('productImages', images);
         const imageUrls = await uploadImage(formData);
         values.imageUrls = imageUrls;
-        const createdProduct = await axios.post('/createProduct', values);
+        const createdProduct = await axios.post('/serviceProvider/createProduct', values);
         console.log(createdProduct);
+        if ((createdProduct.status = 200)) {
+          router.push('/products');
+        }
       } catch (error) {
         console.error('Error:', error);
       }
@@ -289,6 +304,25 @@ const AddProductForm = () => {
   const handleRemoveImage = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
+  useEffect(() => {
+    // Fetch user's current location using Geolocation API
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setCoordinates({ lat: latitude, lng: longitude });
+        },
+        (error) => {
+          console.error('Error getting user location:', error);
+          // Handle errors here
+        },
+      );
+    } else {
+      console.error('Geolocation is not supported by this browser.');
+      // Handle unsupported browser here
+    }
+  }, []);
+
   return (
     <>
       <Alert severity="info">Add Product information</Alert>
@@ -302,12 +336,10 @@ const AddProductForm = () => {
             <Grid container spacing={3}>
               <Grid item xs={12} sm={6}>
                 <Box>
-                  <CustomFormLabel htmlFor="productName">
-                    Product Name{<CustomStar />}
-                  </CustomFormLabel>
+                  <CustomFormLabel htmlFor="name">Product Name{<CustomStar />}</CustomFormLabel>
                   <Field
-                    id="productName"
-                    name="productName"
+                    id="name"
+                    name="name"
                     type="text"
                     placeholder="Enter Product Name"
                     as={CustomTextField}
@@ -322,18 +354,18 @@ const AddProductForm = () => {
                       color: 'primary.main',
                     }}
                   >
-                    <ErrorMessage name="productName" />
+                    <ErrorMessage name="name" />
                   </Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Box>
-                  <CustomFormLabel htmlFor="productDescription">
+                  <CustomFormLabel htmlFor="description">
                     Product Description {<CustomStar />}
                   </CustomFormLabel>
                   <Field
-                    id="productDescription"
-                    name="productDescription"
+                    id="description"
+                    name="description"
                     type="text"
                     placeholder="Enter Product Description"
                     as={CustomTextField}
@@ -347,7 +379,7 @@ const AddProductForm = () => {
                       color: 'primary.main',
                     }}
                   >
-                    <ErrorMessage name="productDescription" />
+                    <ErrorMessage name="description" />
                   </Typography>
                 </Box>
               </Grid>
@@ -491,7 +523,7 @@ const AddProductForm = () => {
                 </Box>
               </Grid>
 
-              <Grid item xs={12} sm={4}>
+              <Grid item xs={12} sm={6}>
                 <Box>
                   <CustomFormLabel>Select Category{<CustomStar />}</CustomFormLabel>
                   <Select
@@ -520,7 +552,35 @@ const AddProductForm = () => {
                   </Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} sm={8}>
+
+              <Grid item xs={12} sm={6}>
+                <Box>
+                  <CustomFormLabel>Choose Location {<CustomStar />}</CustomFormLabel>
+                  <Button color={coordinates ? 'success' : 'primary'} size="large" fullWidth>
+                    {coordinates ? 'Your Current Location is selected' : 'Choose Location'}
+                  </Button>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      textDecoration: 'none',
+                      marginTop: '5px',
+                    }}
+                  >
+                    {<CustomStar />} Buyer will find your product by his/her location which matches
+                    this Location
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      textDecoration: 'none',
+                      color: 'primary.main',
+                    }}
+                  >
+                    <ErrorMessage name="category" />
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={12}>
                 <CustomFormLabel>Upload Images</CustomFormLabel>
                 <div className="mx-5 my-3 border-2 rounded-lg">
                   <Box className="flex flex-col justify-center items-center">
