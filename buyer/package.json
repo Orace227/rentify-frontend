@@ -35,7 +35,8 @@
     "react-i18next": "^13.2.2",
     "react-redux": "^8.0.2",
     "simplebar-react": "^3.2.4",
-    "stylis-plugin-rtl": "^2.1.1"
+    "stylis-plugin-rtl": "^2.1.1",
+    "yup": "^1.4.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.19",
