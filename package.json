@@ -1,0 +1,23 @@
+{
+  "name": "rentify-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev:buyer": "cd buyer && npm run dev",
+    "dev:seller": "cd seller && npm run dev",
+    "dev:all": "concurrently \"npm run dev:seller\" \"npm run dev:buyer\"",
+    "build:buyer": "cd buyer && npm run build",
+    "build:seller": "cd seller && npm run build",
+    "build:all": "npm run build:seller && npm run build:buyer",
+    "start:buyer": "cd buyer && npm run start",
+    "start:seller": "cd seller && npm run start",
+    "start:all": "concurrently \"npm run start:seller\" \"npm run start:buyer\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
